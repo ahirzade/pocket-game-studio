@@ -1,0 +1,216 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pocket Game Studio</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;
+ background:#0b1020;
+ color:white;
+ font-family:Arial,sans-serif;
+}
+header{
+ padding:18px;
+ background:#151d33;
+ border-bottom:1px solid #293653;
+}
+header h1{margin:0;color:#7c9cff;font-size:23px}
+header p{margin:6px 0 0;color:#9ba9c7;font-size:13px}
+main{padding:16px;max-width:900px;margin:auto}
+.card{
+ background:#151d33;
+ border:1px solid #293653;
+ border-radius:15px;
+ padding:17px;
+ margin-bottom:15px;
+}
+h2{font-size:18px;margin-top:0}
+button{
+ background:#657eff;
+ color:white;
+ border:0;
+ border-radius:10px;
+ padding:13px;
+ width:100%;
+ font-size:15px;
+ margin-top:10px;
+ cursor:pointer;
+}
+button.secondary{background:#273451}
+input,textarea{
+ width:100%;
+ background:#0b1020;
+ color:white;
+ border:1px solid #344464;
+ padding:13px;
+ border-radius:10px;
+ margin-top:10px;
+ font-size:15px;
+}
+textarea{min-height:110px}
+.grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:10px;
+}
+.small{font-size:13px;color:#a6b5d3}
+#status{color:#81e6b0;margin-top:12px}
+.project{
+ padding:12px;
+ border:1px solid #344464;
+ border-radius:10px;
+ margin-top:10px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>🎮 Pocket Game Studio</h1>
+<p>Your personal AI game development workspace</p>
+</header>
+
+<main>
+
+<div class="card">
+<h2>🚀 Create a New Game</h2>
+<input id="gameName" placeholder="Game name">
+<textarea id="prompt" placeholder="Describe your dream game..."></textarea>
+<button onclick="createGame()">Create Project</button>
+<p id="status"></p>
+</div>
+
+<div class="card">
+<h2>🛠️ Studio Tools</h2>
+<div class="grid">
+<button onclick="openStudio()">🎨 3D Studio</button>
+<button onclick="openAssets()">📦 Asset Library</button>
+<button onclick="openLighting()">💡 Lighting</button>
+<button onclick="openSettings()">⚙️ Settings</button>
+</div>
+</div>
+
+<div class="card">
+<h2>📁 My Projects</h2>
+<div id="projects"></div>
+</div>
+
+</main>
+
+<script>
+const STORAGE_KEY="pocket_game_projects_v1";
+
+function getProjects(){
+ try{
+  return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");
+ }catch(e){return [];}
+}
+
+function saveProjects(data){
+ localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
+}
+
+function renderProjects(){
+ const box=document.getElementById("projects");
+ const projects=getProjects();
+
+ if(projects.length===0){
+  box.innerHTML='<p class="small">No projects yet. Create your first game!</p>';
+  return;
+ }
+
+ box.innerHTML="";
+
+ projects.forEach((p,index)=>{
+  const div=document.createElement("div");
+  div.className="project";
+
+  const title=document.createElement("b");
+  title.textContent=p.name;
+
+  const desc=document.createElement("p");
+  desc.className="small";
+  desc.textContent=p.prompt;
+
+  const open=document.createElement("button");
+  open.textContent="Open Project";
+  open.onclick=()=>openProject(index);
+
+  const del=document.createElement("button");
+  del.textContent="Delete Project";
+  del.className="secondary";
+  del.onclick=()=>deleteProject(index);
+
+  div.append(title,desc,open,del);
+  box.appendChild(div);
+ });
+}
+
+function createGame(){
+ const name=document.getElementById("gameName").value.trim();
+ const prompt=document.getElementById("prompt").value.trim();
+
+ if(!name){
+  alert("Game ka naam likho!");
+  return;
+ }
+
+ const projects=getProjects();
+
+ projects.unshift({
+  id:Date.now(),
+  name:name,
+  prompt:prompt,
+  created:new Date().toISOString(),
+  objects:[]
+ });
+
+ saveProjects(projects);
+ renderProjects();
+
+ document.getElementById("status").textContent="Project successfully created!";
+ document.getElementById("gameName").value="";
+ document.getElementById("prompt").value="";
+}
+
+function openProject(index){
+ const p=getProjects()[index];
+ if(!p)return;
+ alert("Project opened: "+p.name+"\n\nNext phase mein game editor add hoga.");
+}
+
+function deleteProject(index){
+ if(!confirm("Is project ko delete karna hai?"))return;
+ const projects=getProjects();
+ projects.splice(index,1);
+ saveProjects(projects);
+ renderProjects();
+}
+
+function openStudio(){
+ alert("3D Studio agle phase mein banayenge!");
+}
+
+function openAssets(){
+ alert("Asset Library agle phase mein banayenge!");
+}
+
+function openLighting(){
+ alert("Lighting Studio agle phase mein banayenge!");
+}
+
+function openSettings(){
+ alert("Settings agle phase mein banayenge!");
+}
+
+renderProjects();
+</script>
+
+</body>
+</html>
