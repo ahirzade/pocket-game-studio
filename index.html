@@ -3,68 +3,71 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pocket Game Studio</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0,user-scalable=no">
+<title>Pocket Game Studio - 3D Studio</title>
 
 <style>
 *{box-sizing:border-box}
 body{
- margin:0;
- background:#0b1020;
- color:white;
- font-family:Arial,sans-serif;
+ margin:0;background:#0b1020;color:#fff;
+ font-family:Arial,sans-serif;overflow:hidden;
 }
 header{
- padding:18px;
- background:#151d33;
- border-bottom:1px solid #293653;
+ height:60px;background:#151d33;
+ display:flex;align-items:center;justify-content:space-between;
+ padding:0 12px;border-bottom:1px solid #2b3957;
 }
-header h1{margin:0;color:#7c9cff;font-size:23px}
-header p{margin:6px 0 0;color:#9ba9c7;font-size:13px}
-main{padding:16px;max-width:900px;margin:auto}
-.card{
- background:#151d33;
- border:1px solid #293653;
- border-radius:15px;
- padding:17px;
- margin-bottom:15px;
-}
-h2{font-size:18px;margin-top:0}
+header strong{color:#8da6ff;font-size:17px}
+header button{width:auto;margin:0;padding:9px 12px}
 button{
- background:#657eff;
- color:white;
- border:0;
- border-radius:10px;
- padding:13px;
- width:100%;
- font-size:15px;
- margin-top:10px;
- cursor:pointer;
+ background:#657eff;color:white;border:0;
+ padding:11px;border-radius:9px;font-size:14px;
+ cursor:pointer;touch-action:manipulation;
 }
-button.secondary{background:#273451}
-input,textarea{
- width:100%;
- background:#0b1020;
- color:white;
- border:1px solid #344464;
- padding:13px;
- border-radius:10px;
- margin-top:10px;
- font-size:15px;
+button.secondary{background:#293651}
+button.active{background:#14b8a6}
+button.danger{background:#b94055}
+#layout{display:flex;height:calc(100dvh - 60px)}
+#sidebar{
+ width:185px;background:#121a2d;
+ padding:10px;overflow-y:auto;border-right:1px solid #2b3957;
 }
-textarea{min-height:110px}
-.grid{
- display:grid;
- grid-template-columns:1fr 1fr;
- gap:10px;
+#viewport{flex:1;position:relative;overflow:hidden}
+#canvas{width:100%;height:100%;display:block}
+h3{font-size:14px;margin:10px 0}
+.tool{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.tool button{padding:10px 4px;font-size:12px}
+.section{
+ padding:9px 0;border-bottom:1px solid #293651;
 }
-.small{font-size:13px;color:#a6b5d3}
-#status{color:#81e6b0;margin-top:12px}
-.project{
- padding:12px;
- border:1px solid #344464;
- border-radius:10px;
- margin-top:10px;
+#selectedName{
+ font-size:12px;color:#aebddd;overflow-wrap:anywhere;
+}
+input[type=color]{width:100%;height:40px;border:0;background:none}
+input[type=range]{width:100%}
+#hint{
+ position:absolute;bottom:10px;left:10px;right:10px;
+ background:#111827cc;padding:10px;border-radius:9px;
+ font-size:12px;color:#c6d2e9;pointer-events:none;
+}
+#mobileTools{
+ display:none;position:absolute;bottom:60px;left:8px;right:8px;
+ grid-template-columns:repeat(4,1fr);gap:6px;
+}
+#mobileTools button{padding:10px 3px;font-size:12px}
+#toast{
+ position:absolute;top:12px;left:50%;transform:translateX(-50%);
+ background:#183a35;color:#9ef5d0;padding:10px 14px;
+ border-radius:10px;display:none;z-index:5;font-size:13px;
+}
+@media(max-width:650px){
+ #sidebar{width:130px;padding:7px}
+ #sidebar button{font-size:11px;padding:9px 3px}
+ #sidebar h3{font-size:12px}
+ .tool{grid-template-columns:1fr}
+ header strong{font-size:14px}
+ header button{font-size:11px;padding:8px}
+ #hint{bottom:8px;font-size:10px}
 }
 </style>
 </head>
@@ -72,145 +75,658 @@ textarea{min-height:110px}
 <body>
 
 <header>
-<h1>🎮 Pocket Game Studio</h1>
-<p>Your personal AI game development workspace</p>
+<strong>🎮 Pocket Game Studio</strong>
+<div style="display:flex;gap:6px">
+<button class="secondary" onclick="saveScene()">💾 Save</button>
+<button onclick="playPreview()">▶ Play</button>
+</div>
 </header>
 
-<main>
+<div id="layout">
 
-<div class="card">
-<h2>🚀 Create a New Game</h2>
-<input id="gameName" placeholder="Game name">
-<textarea id="prompt" placeholder="Describe your dream game..."></textarea>
-<button onclick="createGame()">Create Project</button>
-<p id="status"></p>
-</div>
+<aside id="sidebar">
 
-<div class="card">
-<h2>🛠️ Studio Tools</h2>
-<div class="grid">
-<button onclick="openStudio()">🎨 3D Studio</button>
-<button onclick="openAssets()">📦 Asset Library</button>
-<button onclick="openLighting()">💡 Lighting</button>
-<button onclick="openSettings()">⚙️ Settings</button>
+<div class="section">
+<h3>➕ Add Objects</h3>
+<div class="tool">
+<button onclick="addCube()">🧊 Cube</button>
+<button onclick="addSphere()">🔵 Sphere</button>
+<button onclick="addCylinder()">🛢 Cylinder</button>
+<button onclick="addTree()">🌳 Tree</button>
+<button onclick="addHouse()">🏠 House</button>
+<button onclick="addCar()">🚗 Car</button>
 </div>
 </div>
 
-<div class="card">
-<h2>📁 My Projects</h2>
-<div id="projects"></div>
+<div class="section">
+<h3>🎯 Selected Object</h3>
+<div id="selectedName">Nothing selected</div>
 </div>
 
-</main>
+<div class="section">
+<h3>Transform</h3>
+<div class="tool">
+<button onclick="moveSelected()">↔ Move</button>
+<button onclick="rotateSelected()">🔄 Rotate</button>
+<button onclick="scaleSelected()">↕ Scale</button>
+<button class="danger" onclick="deleteSelected()">🗑 Delete</button>
+</div>
+</div>
 
-<script>
-const STORAGE_KEY="pocket_game_projects_v1";
+<div class="section">
+<h3>🎨 Color</h3>
+<input type="color" id="colorPicker" value="#667eea"
+oninput="changeColor(this.value)">
+</div>
 
-function getProjects(){
+<div class="section">
+<h3>💡 Lighting</h3>
+<label class="small">Light intensity</label>
+<input type="range" min="0" max="3" step="0.1" value="1.5"
+oninput="setLight(this.value)">
+</div>
+
+<div class="section">
+<h3>🌎 Environment</h3>
+<button onclick="toggleNight()" style="width:100%">🌙 Day / Night</button>
+<button onclick="resetCamera()" style="width:100%;margin-top:6px"
+class="secondary">📷 Reset Camera</button>
+</div>
+
+<div class="section">
+<h3>📁 Scene</h3>
+<button onclick="loadScene()" class="secondary" style="width:100%">Load Saved Scene</button>
+<button onclick="clearScene()" class="danger" style="width:100%;margin-top:6px">Clear Scene</button>
+</div>
+
+</aside>
+
+<div id="viewport">
+<canvas id="canvas"></canvas>
+
+<div id="toast"></div>
+
+<div id="mobileTools">
+<button onclick="moveSelected()">Move</button>
+<button onclick="rotateSelected()">Rotate</button>
+<button onclick="scaleSelected()">Scale</button>
+<button onclick="deleteSelected()">Delete</button>
+</div>
+
+<div id="hint">
+Touch an object to select it. Drag to move it. Drag empty space to rotate camera. Pinch to zoom.
+</div>
+
+</div>
+</div>
+
+<script type="module">
+
+import * as THREE from
+"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js";
+
+const canvas=document.getElementById("canvas");
+const viewport=document.getElementById("viewport");
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color("#10182b");
+
+const camera=new THREE.PerspectiveCamera(
+ 60,1,0.1,1000
+);
+camera.position.set(8,7,10);
+
+const renderer=new THREE.WebGLRenderer({
+ canvas:canvas,
+ antialias:true,
+ powerPreference:"high-performance"
+});
+
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.5));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1;
+
+const ambient=new THREE.HemisphereLight("#ffffff","#52617c",1.2);
+scene.add(ambient);
+
+const sun=new THREE.DirectionalLight("#fff2d6",1.5);
+sun.position.set(8,12,5);
+sun.castShadow=true;
+sun.shadow.mapSize.set(1024,1024);
+scene.add(sun);
+
+const ground=new THREE.Mesh(
+ new THREE.PlaneGeometry(200,200),
+ new THREE.MeshStandardMaterial({
+  color:"#303c50",
+  roughness:1
+ })
+);
+ground.rotation.x=-Math.PI/2;
+ground.position.y=-0.05;
+ground.receiveShadow=true;
+scene.add(ground);
+
+const grid=new THREE.GridHelper(100,100,"#65718b","#344055");
+grid.position.y=0.01;
+scene.add(grid);
+
+const objects=[];
+let selected=null;
+let night=false;
+
+let camRadius=15;
+let camAngle=0.7;
+let camHeight=7;
+
+let mode="move";
+
+const raycaster=new THREE.Raycaster();
+const pointer=new THREE.Vector2();
+
+const plane=new THREE.Plane(
+ new THREE.Vector3(0,1,0),0
+);
+
+let dragObject=false;
+let dragCamera=false;
+let dragStart={x:0,y:0};
+let objectOffset=new THREE.Vector3();
+let lastPointer=null;
+
+let pinchDistance=0;
+
+function resize(){
+ const w=viewport.clientWidth;
+ const h=viewport.clientHeight;
+
+ camera.aspect=w/h;
+ camera.updateProjectionMatrix();
+ renderer.setSize(w,h,false);
+}
+window.addEventListener("resize",resize);
+resize();
+
+function updateCamera(){
+ camera.position.set(
+  Math.sin(camAngle)*camRadius,
+  camHeight,
+  Math.cos(camAngle)*camRadius
+ );
+ camera.lookAt(0,1,0);
+}
+updateCamera();
+
+function material(color){
+ return new THREE.MeshStandardMaterial({
+  color:color,
+  roughness:0.65,
+  metalness:0.05
+ });
+}
+
+function registerObject(obj,name){
+ obj.name=name;
+ obj.castShadow=true;
+ obj.receiveShadow=true;
+ scene.add(obj);
+ objects.push(obj);
+ selectObject(obj);
+ return obj;
+}
+
+function addCube(){
+ const obj=new THREE.Mesh(
+  new THREE.BoxGeometry(1,1,1),
+  material("#667eea")
+ );
+ obj.position.set(0,0.5,0);
+ registerObject(obj,"Cube");
+}
+
+function addSphere(){
+ const obj=new THREE.Mesh(
+  new THREE.SphereGeometry(0.6,24,16),
+  material("#36b8e9")
+ );
+ obj.position.set(0,0.6,0);
+ registerObject(obj,"Sphere");
+}
+
+function addCylinder(){
+ const obj=new THREE.Mesh(
+  new THREE.CylinderGeometry(0.5,0.5,1,24),
+  material("#f3a44b")
+ );
+ obj.position.set(0,0.5,0);
+ registerObject(obj,"Cylinder");
+}
+
+function addTree(){
+ const group=new THREE.Group();
+
+ const trunk=new THREE.Mesh(
+  new THREE.CylinderGeometry(0.15,0.2,1.5,8),
+  material("#795139")
+ );
+ trunk.position.y=0.75;
+
+ const leaves=new THREE.Mesh(
+  new THREE.SphereGeometry(0.8,12,10),
+  material("#28a85b")
+ );
+ leaves.position.y=1.8;
+
+ group.add(trunk,leaves);
+ group.position.set(0,0,0);
+
+ registerObject(group,"Tree");
+}
+
+function addHouse(){
+ const group=new THREE.Group();
+
+ const base=new THREE.Mesh(
+  new THREE.BoxGeometry(2,1.5,2),
+  material("#e0c6a0")
+ );
+ base.position.y=0.75;
+
+ const roof=new THREE.Mesh(
+  new THREE.ConeGeometry(1.65,1,4),
+  material("#bb5349")
+ );
+ roof.position.y=2;
+ roof.rotation.y=Math.PI/4;
+
+ group.add(base,roof);
+ group.position.set(0,0,0);
+
+ registerObject(group,"House");
+}
+
+function addCar(){
+ const group=new THREE.Group();
+
+ const body=new THREE.Mesh(
+  new THREE.BoxGeometry(2,0.55,1),
+  material("#e34d5b")
+ );
+ body.position.y=0.55;
+
+ const cabin=new THREE.Mesh(
+  new THREE.BoxGeometry(1.1,0.5,0.8),
+  material("#a9c9e5")
+ );
+ cabin.position.y=1;
+
+ const wheelMat=material("#20242b");
+
+ for(let x of [-0.65,0.65]){
+  for(let z of [-0.55,0.55]){
+   const wheel=new THREE.Mesh(
+    new THREE.CylinderGeometry(0.25,0.25,0.18,16),
+    wheelMat
+   );
+   wheel.rotation.z=Math.PI/2;
+   wheel.position.set(x,0.25,z);
+   group.add(wheel);
+  }
+ }
+
+ group.add(body,cabin);
+ registerObject(group,"Car");
+}
+
+function selectObject(obj){
+ selected=obj;
+ document.getElementById("selectedName").textContent=
+ obj?obj.name:"Nothing selected";
+
+ if(obj && obj.material && obj.material.color){
+  document.getElementById("colorPicker").value=
+  "#"+obj.material.color.getHexString();
+ }
+}
+
+function changeColor(value){
+ if(!selected)return;
+
+ selected.traverse(child=>{
+  if(child.isMesh && child.material){
+   if(child.material.color){
+    child.material.color.set(value);
+   }
+  }
+ });
+}
+
+function deleteSelected(){
+ if(!selected)return;
+
+ scene.remove(selected);
+
+ selected.traverse(child=>{
+  if(child.geometry)child.geometry.dispose();
+  if(child.material){
+   if(Array.isArray(child.material)){
+    child.material.forEach(m=>m.dispose());
+   }else child.material.dispose();
+  }
+ });
+
+ const index=objects.indexOf(selected);
+ if(index>=0)objects.splice(index,1);
+
+ selectObject(null);
+}
+
+function moveSelected(){
+ if(!selected)return;
+ mode="move";
+ toast("Move mode: drag object");
+}
+
+function rotateSelected(){
+ if(!selected)return;
+ selected.rotation.y+=Math.PI/4;
+ toast("Object rotated 45°");
+}
+
+function scaleSelected(){
+ if(!selected)return;
+ selected.scale.multiplyScalar(1.2);
+ toast("Object enlarged");
+}
+
+function setLight(value){
+ sun.intensity=Number(value);
+ ambient.intensity=0.7+Number(value)*0.3;
+}
+
+function toggleNight(){
+ night=!night;
+
+ if(night){
+  scene.background.set("#080d20");
+  ambient.color.set("#8097ff");
+  sun.color.set("#94aaff");
+  sun.intensity=0.3;
+  ambient.intensity=0.45;
+ }else{
+  scene.background.set("#10182b");
+  ambient.color.set("#ffffff");
+  sun.color.set("#fff2d6");
+  sun.intensity=1.5;
+  ambient.intensity=1.2;
+ }
+}
+
+function resetCamera(){
+ camRadius=15;
+ camAngle=0.7;
+ camHeight=7;
+ updateCamera();
+}
+
+function toast(message){
+ const el=document.getElementById("toast");
+ el.textContent=message;
+ el.style.display="block";
+
+ setTimeout(()=>{
+  el.style.display="none";
+ },1800);
+}
+
+function saveScene(){
+ const data=objects.map(obj=>({
+  name:obj.name,
+  type:obj.userData.type||obj.name,
+  position:obj.position.toArray(),
+  rotation:obj.rotation.toArray(),
+  scale:obj.scale.toArray(),
+  color:getObjectColor(obj)
+ }));
+
  try{
-  return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");
- }catch(e){return [];}
+  localStorage.setItem("pocket3d_scene",JSON.stringify(data));
+  toast("Scene saved successfully!");
+ }catch(e){
+  toast("Save failed");
+ }
 }
 
-function saveProjects(data){
- localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
+function getObjectColor(obj){
+ let color="#ffffff";
+ obj.traverse(child=>{
+  if(child.isMesh&&child.material&&child.material.color){
+   color="#"+child.material.color.getHexString();
+  }
+ });
+ return color;
 }
 
-function renderProjects(){
- const box=document.getElementById("projects");
- const projects=getProjects();
-
- if(projects.length===0){
-  box.innerHTML='<p class="small">No projects yet. Create your first game!</p>';
+function loadScene(){
+ const raw=localStorage.getItem("pocket3d_scene");
+ if(!raw){
+  toast("No saved scene found");
   return;
  }
 
- box.innerHTML="";
+ clearObjectsOnly();
 
- projects.forEach((p,index)=>{
-  const div=document.createElement("div");
-  div.className="project";
+ try{
+  const data=JSON.parse(raw);
+  data.forEach(item=>{
+   let obj;
 
-  const title=document.createElement("b");
-  title.textContent=p.name;
+   switch(item.name){
+    case "Cube": addCube();break;
+    case "Sphere": addSphere();break;
+    case "Cylinder": addCylinder();break;
+    case "Tree": addTree();break;
+    case "House": addHouse();break;
+    case "Car": addCar();break;
+    default:addCube();
+   }
 
-  const desc=document.createElement("p");
-  desc.className="small";
-  desc.textContent=p.prompt;
+   obj=selected;
+   obj.position.fromArray(item.position);
+   obj.rotation.fromArray(item.rotation);
+   obj.scale.fromArray(item.scale);
+   changeColor(item.color||"#ffffff");
+  });
 
-  const open=document.createElement("button");
-  open.textContent="Open Project";
-  open.onclick=()=>openProject(index);
-
-  const del=document.createElement("button");
-  del.textContent="Delete Project";
-  del.className="secondary";
-  del.onclick=()=>deleteProject(index);
-
-  div.append(title,desc,open,del);
-  box.appendChild(div);
- });
+  selectObject(null);
+  toast("Scene loaded!");
+ }catch(e){
+  toast("Scene could not be loaded");
+ }
 }
 
-function createGame(){
- const name=document.getElementById("gameName").value.trim();
- const prompt=document.getElementById("prompt").value.trim();
+function clearObjectsOnly(){
+ [...objects].forEach(obj=>{
+  scene.remove(obj);
+ });
+ objects.length=0;
+ selectObject(null);
+}
 
- if(!name){
-  alert("Game ka naam likho!");
-  return;
+function clearScene(){
+ if(!confirm("Clear all objects?"))return;
+ clearObjectsOnly();
+ toast("Scene cleared");
+}
+
+function playPreview(){
+ const oldBg=scene.background.clone();
+
+ toast("Preview camera activated!");
+
+ camRadius=8;
+ camHeight=4;
+ updateCamera();
+
+ setTimeout(()=>{
+  camRadius=15;
+  camHeight=7;
+  updateCamera();
+ },5000);
+}
+
+function getPointer(event){
+ const rect=canvas.getBoundingClientRect();
+
+ pointer.x=((event.clientX-rect.left)/rect.width)*2-1;
+ pointer.y=-((event.clientY-rect.top)/rect.height)*2+1;
+
+ raycaster.setFromCamera(pointer,camera);
+}
+
+function getHitObject(event){
+ getPointer(event);
+
+ const hits=raycaster.intersectObjects(objects,true);
+ if(!hits.length)return null;
+
+ let obj=hits[0].object;
+ while(obj.parent&&!objects.includes(obj)){
+  obj=obj.parent;
+ }
+ return objects.includes(obj)?obj:null;
+}
+
+function pointerDown(event){
+ event.preventDefault();
+
+ canvas.setPointerCapture(event.pointerId);
+
+ dragStart={x:event.clientX,y:event.clientY};
+ lastPointer={x:event.clientX,y:event.clientY};
+
+ const hit=getHitObject(event);
+
+ if(hit){
+  selectObject(hit);
+
+  if(mode==="move"){
+   dragObject=true;
+
+   getPointer(event);
+   raycaster.ray.intersectPlane(plane,objectOffset);
+
+   objectOffset.sub(selected.position);
+  }
+ }else{
+  selectObject(null);
+  dragCamera=true;
+ }
+}
+
+function pointerMove(event){
+ if(!lastPointer)return;
+
+ const dx=event.clientX-lastPointer.x;
+ const dy=event.clientY-lastPointer.y;
+
+ lastPointer={x:event.clientX,y:event.clientY};
+
+ if(dragObject&&selected){
+  getPointer(event);
+
+  const point=new THREE.Vector3();
+  if(raycaster.ray.intersectPlane(plane,point)){
+   selected.position.x=point.x-objectOffset.x;
+   selected.position.z=point.z-objectOffset.z;
+  }
  }
 
- const projects=getProjects();
-
- projects.unshift({
-  id:Date.now(),
-  name:name,
-  prompt:prompt,
-  created:new Date().toISOString(),
-  objects:[]
- });
-
- saveProjects(projects);
- renderProjects();
-
- document.getElementById("status").textContent="Project successfully created!";
- document.getElementById("gameName").value="";
- document.getElementById("prompt").value="";
+ if(dragCamera){
+  camAngle-=dx*0.008;
+  camHeight+=dy*0.04;
+  camHeight=Math.max(1,Math.min(20,camHeight));
+  updateCamera();
+ }
 }
 
-function openProject(index){
- const p=getProjects()[index];
- if(!p)return;
- alert("Project opened: "+p.name+"\n\nNext phase mein game editor add hoga.");
+function pointerUp(){
+ dragObject=false;
+ dragCamera=false;
+ lastPointer=null;
 }
 
-function deleteProject(index){
- if(!confirm("Is project ko delete karna hai?"))return;
- const projects=getProjects();
- projects.splice(index,1);
- saveProjects(projects);
- renderProjects();
-}
+canvas.addEventListener("pointerdown",pointerDown);
+canvas.addEventListener("pointermove",pointerMove);
+canvas.addEventListener("pointerup",pointerUp);
+canvas.addEventListener("pointercancel",pointerUp);
 
-function openStudio(){
- alert("3D Studio agle phase mein banayenge!");
-}
+canvas.addEventListener("wheel",event=>{
+ camRadius+=event.deltaY*0.01;
+ camRadius=Math.max(3,Math.min(80,camRadius));
+ updateCamera();
+},{passive:true});
 
-function openAssets(){
- alert("Asset Library agle phase mein banayenge!");
-}
+let touchStartDistance=0;
 
-function openLighting(){
- alert("Lighting Studio agle phase mein banayenge!");
-}
+canvas.addEventListener("touchstart",event=>{
+ if(event.touches.length===2){
+  touchStartDistance=Math.hypot(
+   event.touches[0].clientX-event.touches[1].clientX,
+   event.touches[0].clientY-event.touches[1].clientY
+  );
+ }
+},{passive:true});
 
-function openSettings(){
- alert("Settings agle phase mein banayenge!");
-}
+canvas.addEventListener("touchmove",event=>{
+ if(event.touches.length===2){
+  const distance=Math.hypot(
+   event.touches[0].clientX-event.touches[1].clientX,
+   event.touches[0].clientY-event.touches[1].clientY
+  );
 
-renderProjects();
+  if(touchStartDistance>0){
+   camRadius-= (distance-touchStartDistance)*0.02;
+   camRadius=Math.max(3,Math.min(80,camRadius));
+   updateCamera();
+  }
+
+  touchStartDistance=distance;
+ }
+},{passive:true});
+
+function animate(){
+ requestAnimationFrame(animate);
+ renderer.render(scene,camera);
+}
+animate();
+
+window.addCube=addCube;
+window.addSphere=addSphere;
+window.addCylinder=addCylinder;
+window.addTree=addTree;
+window.addHouse=addHouse;
+window.addCar=addCar;
+window.saveScene=saveScene;
+window.loadScene=loadScene;
+window.clearScene=clearScene;
+window.deleteSelected=deleteSelected;
+window.moveSelected=moveSelected;
+window.rotateSelected=rotateSelected;
+window.scaleSelected=scaleSelected;
+window.changeColor=changeColor;
+window.setLight=setLight;
+window.toggleNight=toggleNight;
+window.resetCamera=resetCamera;
+window.playPreview=playPreview;
+
+toast("3D Studio ready!");
+
 </script>
 
 </body>
-</html>
+ </html>
+ 
