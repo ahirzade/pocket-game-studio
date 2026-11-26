@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pocket Character Studio</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101525;color:#fff;font-family:Arial}
+header{padding:12px;background:#1b2540;display:flex;justify-content:space-between;align-items:center}
+header b{color:#9bb5ff}
+main{display:flex;height:calc(100dvh - 54px)}
+#tools{width:165px;background:#151d32;padding:10px;overflow:auto}
+#view{flex:1;min-width:0;position:relative}
+canvas{width:100%;height:100%;display:block;touch-action:none}
+h3{font-size:13px;margin:12px 0 6px}
+label{font-size:11px;color:#bfc9e0}
+button,select{width:100%;padding:9px;margin:3px 0;border:0;border-radius:7px;background:#35476b;color:white;font-size:12px}
+button{cursor:pointer}
+input[type=color]{width:100%;height:36px}
+input[type=range]{width:100%}
+#status{position:absolute;bottom:10px;left:10px;background:#263450;padding:8px;border-radius:8px;font-size:11px}
+@media(max-width:600px){#tools{width:125px;padding:5px}button,select{font-size:10px;padding:7px 2px}}
+</style>
+</head>
+<body>
+
+<header>
+<b>🧑 Character Studio</b>
+<button onclick="saveCharacter()" style="width:auto">Save</button>
+</header>
+
+<main>
+<div id="tools">
+
+<h3>Character</h3>
+<select id="type" onchange="buildCharacter()">
+<option value="human">Human</option>
+<option value="stylized">Stylized Avatar</option>
+<option value="robot">Robot</option>
+</select>
+
+<h3>Body Parts</h3>
+<select id="part" onchange="changePart()">
+<option value="skin">Skin</option>
+<option value="hair">Hair</option>
+<option value="shirt">Shirt</option>
+<option value="pants">Pants</option>
+<option value="shoes">Shoes</option>
+<option value="eyes">Eyes</option>
+</select>
+
+<h3>Color</h3>
+<input type="color" id="color" value="#c58b68" onchange="applyColor(this.value)">
+
+<h3>Hair Style</h3>
+<select id="hairStyle" onchange="buildCharacter()">
+<option value="short">Short</option>
+<option value="spiky">Spiky</option>
+<option value="long">Long</option>
+<option value="bald">Bald</option>
+</select>
+
+<h3>Clothing</h3>
+<select id="clothing" onchange="buildCharacter()">
+<option value="casual">Casual</option>
+<option value="formal">Formal</option>
+<option value="hoodie">Hoodie</option>
+<option value="sport">Sport</option>
+</select>
+
+<h3>Proportions</h3>
+<label>Height</label>
+<input type="range" min="0.8" max="1.3" step="0.01" value="1" id="height" oninput="proportions()">
+
+<label>Head size</label>
+<input type="range" min="0.8" max="1.3" step="0.01" value="1" id="headSize" oninput="proportions()">
+
+<label>Shoulders</label>
+<input type="range" min="0.7" max="1.4" step="0.01" value="1" id="shoulder" oninput="proportions()">
+
+<h3>View</h3>
+<button onclick="resetCamera()">Reset Camera</button>
+<button onclick="rotateCharacter()">Rotate 45°</button>
+
+<h3>Project</h3>
+<button onclick="saveCharacter()">Save</button>
+<button onclick="loadCharacter()">Load</button>
+<button onclick="exportCharacter()">Export JSON</button>
+<button onclick="resetCharacter()">Reset</button>
+
+</div>
+
+<div id="view">
+<canvas id="canvas"></canvas>
+<div id="status">Character ready</div>
+</div>
+</main>
+
+<script type="module">
+
+import * as THREE from
+"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js";
+
+const canvas=document.getElementById("canvas");
+const view=document.getElementById("view");
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color("#a6bbd4");
+
+const camera=new THREE.PerspectiveCamera(45,1,0.1,100);
+camera.position.set(4,3,6);
+
+const renderer=new THREE.WebGLRenderer({
+ canvas,antialias:true
+});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+renderer.shadowMap.enabled=true;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+
+scene.add(new THREE.HemisphereLight("#ffffff","#647080",2));
+
+const light=new THREE.DirectionalLight("#fff1dd",3);
+light.position.set(5,8,5);
+light.castShadow=true;
+light.shadow.mapSize.set(1024,1024);
+scene.add(light);
+
+const fill=new THREE.DirectionalLight("#b9d4ff",1);
+fill.position.set(-5,4,-4);
+scene.add(fill);
+
+const ground=new THREE.Mesh(
+ new THREE.PlaneGeometry(30,30),
+ new THREE.MeshStandardMaterial({color:"#65717e",roughness:1})
+);
+ground.rotation.x=-Math.PI/2;
+ground.position.y=-0.05;
+ground.receiveShadow=true;
+scene.add(ground);
+
+const grid=new THREE.GridHelper(20,20);
+grid.position.y=0;
+scene.add(grid);
+
+let character=new THREE.Group();
+scene.add(character);
+
+let parts={};
+let rotation=0;
+let cameraAngle=0.7;
+let cameraRadius=7;
+let cameraHeight=2.5;
+let dragging=false;
+let previousX=0,previousY=0;
+
+function resize(){
+ camera.aspect=view.clientWidth/view.clientHeight;
+ camera.updateProjectionMatrix();
+ renderer.setSize(view.clientWidth,view.clientHeight,false);
+}
+window.addEventListener("resize",resize);
+resize();
+
+function cameraUpdate(){
+ camera.position.set(
+ Math.sin(cameraAngle)*cameraRadius,
+ cameraHeight,
+ Math.cos(cameraAngle)*cameraRadius
+ );
+ camera.lookAt(0,1.5,0);
+}
+cameraUpdate();
+
+function material(color,rough=0.75){
+ return new THREE.MeshStandardMaterial({color,roughness:rough});
+}
+
+function addPart(name,geometry,color,x,y,z){
+ const m=new THREE.Mesh(geometry,material(color));
+ m.name=name;
+ m.position.set(x,y,z);
+ m.castShadow=true;
+ m.receiveShadow=true;
+ character.add(m);
+ parts[name]=m;
+ return m;
+}
+
+function buildCharacter(){
+ character.clear();
+ parts={};
+
+ const style=document.getElementById("type").value;
+ const hairStyle=document.getElementById("hairStyle").value;
+ const clothing=document.getElementById("clothing").value;
+
+ const skinColor="#c58b68";
+ const hairColor="#30251e";
+ let shirtColor="#416bc4";
+ let pantsColor="#303c55";
+ let shoeColor="#22252b";
+
+ if(clothing==="formal"){
+ shirtColor="#eeeeee";
+ pantsColor="#20232c";
+ }
+ if(clothing==="hoodie"){
+ shirtColor="#56714f";
+ }
+ if(clothing==="sport"){
+ shirtColor="#db4747";
+ pantsColor="#253f75";
+ }
+
+ if(style==="robot"){
+  const metal="#a8b6c9";
+  addPart("Head",new THREE.BoxGeometry(.65,.65,.55),metal,0,2.65,0);
+  addPart("Torso",new THREE.BoxGeometry(.8,1,.5),"#536a8c",0,1.75,0);
+  addPart("Pelvis",new THREE.BoxGeometry(.6,.4,.4),metal,0,1.05,0);
+  addPart("EyeLeft",new THREE.SphereGeometry(.09,16,12),"#37e6ff",-.15,2.7,.29);
+  addPart("EyeRight",new THREE.SphereGeometry(.09,16,12),"#37e6ff",.15,2.7,.29);
+ }else{
+  const headSize=Number(document.getElementById("headSize").value);
+  const shoulder=Number(document.getElementById("shoulder").value);
+
+  addPart("Head",new THREE.SphereGeometry(.35*headSize,24,20),skinColor,0,2.65,0);
+
+  addPart("Nose",new THREE.ConeGeometry(.07,.15,8),skinColor,0,2.55,.34);
+
+  addPart("EyeLeft",new THREE.SphereGeometry(.045,12,8),"#ffffff",-.12,2.68,.29);
+  addPart("EyeRight",new THREE.SphereGeometry(.045,12,8),"#ffffff",.12,2.68,.29);
+
+  addPart("PupilLeft",new THREE.SphereGeometry(.022,10,8),"#28211c",-.12,2.68,.33);
+  addPart("PupilRight",new THREE.SphereGeometry(.022,10,8),"#28211c",.12,2.68,.33);
+
+  if(hairStyle!=="bald"){
+   if(hairStyle==="long"){
+    addPart("Hair",new THREE.SphereGeometry(.39,20,14),hairColor,0,2.91,0);
+    addPart("HairBack",new THREE.BoxGeometry(.52,.7,.25),hairColor,0,2.55,-.16);
+   }else{
+    addPart("Hair",new THREE.SphereGeometry(.37,20,14),hairColor,0,2.91,0);
+   }
+
+   if(hairStyle==="spiky"){
+    for(let i=0;i<5;i++){
+     addPart("HairSpike",new THREE.ConeGeometry(.11,.3,8),hairColor,
+     (i-2)*.12,3.15,0);
+    }
+   }
+  }
+
+  addPart("Torso",new THREE.BoxGeometry(.72*shoulder,1,.4),shirtColor,0,1.75,0);
+
+  addPart("Pelvis",new THREE.BoxGeometry(.58,.38,.38),pantsColor,0,1.08,0);
+
+  for(let s of [-1,1]){
+   addPart("Arm",new THREE.CapsuleGeometry(.12,.55,4,10),skinColor,s*.48,1.72,0);
+
+   addPart("Hand",new THREE.SphereGeometry(.12,12,10),skinColor,s*.5,1.28,0);
+
+   addPart("Leg",new THREE.BoxGeometry(.24,.75,.28),pantsColor,s*.17,.58,0);
+
+   addPart("Shoe",new THREE.BoxGeometry(.28,.16,.4),shoeColor,s*.17,.13,.06);
+  }
+ }
+
+ const h=Number(document.getElementById("height").value);
+ character.scale.y=h;
+
+ character.rotation.y=rotation;
+ status("Character created");
+}
+
+function changePart(){
+ const part=document.getElementById("part").value;
+ if(parts[part]){
+  document.getElementById("color").value=
+  "#"+parts[part].material.color.getHexString();
+ }
+}
+
+function applyColor(color){
+ const part=document.getElementById("part").value;
+ const names={
+ skin:["Head","Nose","Arm","Hand"],
+ hair:["Hair","HairBack","HairSpike"],
+ shirt:["Torso"],
+ pants:["Pelvis","Leg"],
+ shoes:["Shoe"],
+ eyes:["EyeLeft","EyeRight","PupilLeft","PupilRight"]
+ };
+
+ (names[part]||[]).forEach(n=>{
+  if(parts[n])parts[n].material.color.set(color);
+ });
+
+ status(part+" color changed");
+}
+
+function proportions(){
+ buildCharacter();
+}
+
+function rotateCharacter(){
+ rotation+=Math.PI/4;
+ character.rotation.y=rotation;
+}
+
+function resetCamera(){
+ cameraAngle=.7;
+ cameraRadius=7;
+ cameraHeight=2.5;
+ cameraUpdate();
+}
+
+function status(text){
+ document.getElementById("status").textContent=text;
+}
+
+function saveCharacter(){
+ const data={
+ type:document.getElementById("type").value,
+ hair:document.getElementById("hairStyle").value,
+ clothing:document.getElementById("clothing").value,
+ height:document.getElementById("height").value,
+ head:document.getElementById("headSize").value,
+ shoulder:document.getElementById("shoulder").value,
+ colors:{}
+ };
+
+ for(const [name,obj] of Object.entries(parts)){
+  data.colors[name]="#"+obj.material.color.getHexString();
+ }
+
+ localStorage.setItem("pocket_character",JSON.stringify(data));
+ status("Character saved!");
+}
+
+function loadCharacter(){
+ const raw=localStorage.getItem("pocket_character");
+ if(!raw){status("No saved character");return;}
+
+ const data=JSON.parse(raw);
+
+ document.getElementById("type").value=data.type;
+ document.getElementById("hairStyle").value=data.hair;
+ document.getElementById("clothing").value=data.clothing;
+ document.getElementById("height").value=data.height;
+ document.getElementById("headSize").value=data.head;
+ document.getElementById("shoulder").value=data.shoulder;
+
+ buildCharacter();
+
+ for(const [name,color] of Object.entries(data.colors||{})){
+  if(parts[name])parts[name].material.color.set(color);
+ }
+
+ status("Character loaded!");
+}
+
+function exportCharacter(){
+ const data={
+ type:document.getElementById("type").value,
+ hair:document.getElementById("hairStyle").value,
+ clothing:document.getElementById("clothing").value,
+ height:document.getElementById("height").value,
+ head:document.getElementById("headSize").value,
+ shoulder:document.getElementById("shoulder").value,
+ colors:{}
+ };
+
+ for(const [name,obj] of Object.entries(parts)){
+  data.colors[name]="#"+obj.material.color.getHexString();
+ }
+
+ const blob=new Blob([JSON.stringify(data,null,2)],{
+ type:"application/json"
+ });
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement("a");
+ a.href=url;
+ a.download="character.json";
+ a.click();
+ URL.revokeObjectURL(url);
+ status("Character exported");
+}
+
+function resetCharacter(){
+ document.getElementById("type").value="human";
+ document.getElementById("hairStyle").value="short";
+ document.getElementById("clothing").value="casual";
+ document.getElementById("height").value=1;
+ document.getElementById("headSize").value=1;
+ document.getElementById("shoulder").value=1;
+ rotation=0;
+ buildCharacter();
+}
+
+canvas.addEventListener("pointerdown",e=>{
+ dragging=true;
+ previousX=e.clientX;
+ previousY=e.clientY;
+ canvas.setPointerCapture(e.pointerId);
+});
+
+canvas.addEventListener("pointermove",e=>{
+ if(!dragging)return;
+
+ const dx=e.clientX-previousX;
+ const dy=e.clientY-previousY;
+
+ previousX=e.clientX;
+ previousY=e.clientY;
+
+ cameraAngle-=dx*.008;
+ cameraHeight=Math.max(1.1,Math.min(6,cameraHeight+dy*.015));
+ cameraUpdate();
+});
+
+canvas.addEventListener("pointerup",()=>dragging=false);
+canvas.addEventListener("pointercancel",()=>dragging=false);
+
+canvas.addEventListener("wheel",e=>{
+ cameraRadius=Math.max(3,Math.min(15,cameraRadius+e.deltaY*.01));
+ cameraUpdate();
+},{passive:true});
+
+function animate(){
+ requestAnimationFrame(animate);
+ renderer.render(scene,camera);
+}
+animate();
+
+window.buildCharacter=buildCharacter;
+window.changePart=changePart;
+window.applyColor=applyColor;
+window.proportions=proportions;
+window.rotateCharacter=rotateCharacter;
+window.resetCamera=resetCamera;
+window.saveCharacter=saveCharacter;
+window.loadCharacter=loadCharacter;
+window.exportCharacter=exportCharacter;
+window.resetCharacter=resetCharacter;
+
+buildCharacter();
+
+</script>
+</body>
+  </html>
+  
